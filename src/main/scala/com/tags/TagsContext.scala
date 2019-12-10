@@ -24,7 +24,7 @@ object TagsContext {
         // 广告标签
         val adTag = TagsAD.makeTags(row)
         // 商圈标签
-        BusinessTag.makeTags(row)
+        val businessList = BusinessTag.makeTags(row)
     })
 
   }
