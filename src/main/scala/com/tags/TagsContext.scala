@@ -45,7 +45,10 @@ object TagsContext {
         //         上下文标签
         (userId, adTag ++ businessList ++ appName ++ platformTag ++ deviceTags ++ keyWordsTag ++ areaTags)
       })
-    transform.rdd.groupByKey().mapValues()
+    transform.rdd.reduceByKey((list1: List[(String, Int)], list2: List[(String, Int)]) => {
+
+      null
+    })
     spark.stop()
 
   }
