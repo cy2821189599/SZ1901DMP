@@ -48,6 +48,8 @@ object TagsContext {
     transform.rdd.reduceByKey((list1: List[(String, Int)], list2: List[(String, Int)]) =>
       list1 ++ list2.groupBy(_._1).mapValues(_.foldLeft(0)(_+_._2))
     )
+    // 保存到hbase
+
     spark.stop()
 
   }
