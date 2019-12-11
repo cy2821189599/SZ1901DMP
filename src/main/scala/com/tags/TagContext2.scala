@@ -13,14 +13,15 @@ object TagContext2 {
     //停用的关键词
     val stopWords = Source.fromFile("D:\\ReciveFile\\项目2\\项目day10-画像\\笔记\\Spark用户画像分析\\stopwords.txt").getLines()
       .toArray.map(_.trim)
+
     import spark.implicits._
-    val baseRdd = rowDF.filter(TagsUtils.oneUserId).map(row => {
+    val baseRdd = rowDF.filter(TagsUtils.oneUserId).rdd.map(row => {
       val userId = TagsUtils.getUserIds(row)
       (userId, row)
     })
 
     // 创建点
-    val VD = baseRdd.rdd.flatMap(r => {
+    val VD = baseRdd.flatMap(r => {
       val row = r._2
       // 广告标签
       val adTag = TagsAD.makeTags(row)
@@ -46,11 +47,12 @@ object TagContext2 {
     })
 
     // 创建边
-    val ED = baseRdd.rdd.flatMap(r => r._1.map(u => Edge(u.hashCode.toLong, r._1.head.hashCode.toLong,0)))
+    val ED = baseRdd.flatMap(r => r._1.map(u => Edge(u.hashCode.toLong, r._1.head.hashCode.toLong,0)))
 
     val graph = Graph(VD,ED)
     val vertices = graph.connectedComponents().vertices
-    vertices.foreach(println)
+
+    vertices.join(VD).foreach(println)
 
     spark.stop()
   }
