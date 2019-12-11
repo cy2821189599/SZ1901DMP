@@ -1,6 +1,12 @@
 package com.tags
 
+import java.io.IOException
+
 import com.util.TagsUtils
+import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, TableName}
+import org.apache.hadoop.hbase.client.{ConnectionFactory, Put}
+import org.apache.hadoop.hbase.regionserver.BloomType
+import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
@@ -15,6 +21,20 @@ object TagsContext {
     val Array(inputPath, outputPath) = args
     val spark = SparkSession.builder().appName("tags").master("local").getOrCreate()
 
+    val configuration = spark.sparkContext.hadoopConfiguration
+    configuration.set("hbase.zookeeper.quorum", "namenode:2181,secondnamenode:2181,datanode1:2181")
+    val connection = ConnectionFactory.createConnection(configuration)
+    val admin = connection.getAdmin
+    val htd = new HTableDescriptor(TableName.valueOf("ns1:sz1901"))
+    val hcd = new HColumnDescriptor("tags")
+    hcd.setBloomFilterType(BloomType.ROW)
+    hcd.setTimeToLive(24 * 60 * 60)
+    htd.addFamily(hcd)
+    try admin.createTable(htd)
+    catch {
+      case e: IOException =>
+        e.printStackTrace()
+    }
     // 获取数据
     val df = spark.read.parquet(inputPath)
     //停用的关键词
@@ -45,11 +65,29 @@ object TagsContext {
         //         上下文标签
         (userId, adTag ++ businessList ++ appName ++ platformTag ++ deviceTags ++ keyWordsTag ++ areaTags)
       })
-    transform.rdd.reduceByKey((list1: List[(String, Int)], list2: List[(String, Int)]) =>
-      list1 ++ list2.groupBy(_._1).mapValues(_.foldLeft(0)(_+_._2))
+    val integration = transform.rdd.reduceByKey((list1: List[(String, Int)], list2: List[(String, Int)]) =>
+      list1 ++ list2.groupBy(_._1).mapValues(_.foldLeft(0)(_ + _._2))
     )
-    // 保存到hbase
 
+    // 保存到hbase
+    var list = new java.util.ArrayList[Put]
+    try {
+      val table = connection.getTable(TableName.valueOf("ns1:sz1901"))
+      integration.foreach(r => {})
+      val put = new Put("tags".getBytes)
+      //行键下有列族，将数据插入到对应列族中的列限定符下
+      put.addColumn(Bytes.toBytes("user_info"), Bytes.toBytes("name"), Bytes.toBytes("root"))
+      //      table.put(put)
+      list.add(put)
+      // 插入多条数据
+      table.put(list)
+    } catch {
+      case e: IOException =>
+        e.printStackTrace()
+    } finally {
+      admin.close()
+      connection.close()
+    }
     spark.stop()
 
   }

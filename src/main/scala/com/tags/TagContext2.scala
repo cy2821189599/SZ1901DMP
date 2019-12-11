@@ -52,7 +52,21 @@ object TagContext2 {
     val graph = Graph(VD,ED)
     val vertices = graph.connectedComponents().vertices
 
-    vertices.join(VD).foreach(println)
+    vertices.join(VD).map{
+      // 顶点ID，标签
+      case(uid,(vd,tagsUserId))=>(vd,tagsUserId)
+    }.reduceByKey{
+      case (list1,list2)=>
+        // 每条数据相加成一个集合
+        (list1++list2)
+          // 按照集合内的Tuple._1分组
+          .groupBy(_._1)
+          // 聚合每个Tuple的Value值
+          .mapValues(_.map(_._2).sum)
+          .toList
+    }.foreach(println)
+      // 将数据存储入Hbase
+
 
     spark.stop()
   }
