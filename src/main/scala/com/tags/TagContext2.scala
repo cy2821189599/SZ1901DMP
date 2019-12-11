@@ -49,7 +49,8 @@ object TagContext2 {
     val ED = baseRdd.rdd.flatMap(r => r._1.map(u => Edge(u.hashCode.toLong, r._1.head.hashCode.toLong,0)))
 
     val graph = Graph(VD,ED)
-    graph
+    val vertices = graph.connectedComponents().vertices
+    vertices.foreach(println)
 
     spark.stop()
   }
