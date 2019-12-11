@@ -16,6 +16,12 @@ object TagContext2 {
     import spark.implicits._
     val baseRdd = rowDF.filter(TagsUtils.oneUserId).map(row => {
       val userId = TagsUtils.getUserIds(row)
+      (userId, row)
+    })
+
+    // 创建点
+    val VD = baseRdd.rdd.flatMap(r => {
+      val row = r._2
       // 广告标签
       val adTag = TagsAD.makeTags(row)
       // 商圈标签
@@ -30,21 +36,18 @@ object TagContext2 {
       val keyWordsTag = KeywordTags.makeTags(row, stopWords)
       // 地域标签
       val areaTags = AreaTags.makeTags(row)
-      (userId, adTag ++ businessList ++ appName ++ platformTag ++ deviceTags ++ keyWordsTag ++ areaTags)
-    }).rdd
-    // 创建点
-    val VD = baseRdd.flatMap(r => {
-      val tuples = r._1.map((_, 0))
-      tuples.map(t => {
-        if (t == tuples.head)
-          (t._1, r._1 ++ r._2)
+      var vd = r._1.map((_, 0)) ++ adTag ++ businessList ++ appName ++ platformTag ++ deviceTags ++ keyWordsTag ++ areaTags
+      r._1.map(userId => {
+        if (r._1.head.equals(userId))
+          (userId.hashCode.toLong, vd)
         else
-          (_, List.empty)
+          (userId.hashCode.toLong, List.empty)
       })
     })
 
     // 创建图
-    baseRdd.flatMap(r=>r._1.map(Edge()))
+    val ED = baseRdd.rdd.flatMap(r => r._1.map(u => (u.hashCode.toLong, r._1.head.hashCode.toLong)))
+
 
     spark.stop()
   }
