@@ -1,7 +1,7 @@
 package com.tags
 
 import com.util.TagsUtils
-import org.apache.spark.graphx.Edge
+import org.apache.spark.graphx.{Edge, Graph}
 import org.apache.spark.sql.SparkSession
 
 import scala.io.Source
@@ -45,9 +45,11 @@ object TagContext2 {
       })
     })
 
-    // 创建图
-    val ED = baseRdd.rdd.flatMap(r => r._1.map(u => (u.hashCode.toLong, r._1.head.hashCode.toLong)))
+    // 创建边
+    val ED = baseRdd.rdd.flatMap(r => r._1.map(u => Edge(u.hashCode.toLong, r._1.head.hashCode.toLong,0)))
 
+    val graph = Graph(VD,ED)
+    graph
 
     spark.stop()
   }
