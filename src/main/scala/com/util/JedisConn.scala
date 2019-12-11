@@ -4,13 +4,13 @@ import redis.clients.jedis.{Jedis, JedisPool, JedisPoolConfig}
 
 object JedisConn {
 
-  private val config: JedisPoolConfig = JedisPoolConfig
-  config.setMaxIdle(20)
-  config.setMaxTotal(10)
+  private val config: JedisPoolConfig = new JedisPoolConfig
+  config.setMaxIdle(50)
+  config.setMaxTotal(20)
 
 
 
-  private val pool = new JedisPool(config,"10.36.151.74",7000)
+  private val pool = new JedisPool(config,"localhost",6379,10000)
 
   def getConn(): Jedis ={
     pool.getResource

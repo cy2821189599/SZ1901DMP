@@ -13,7 +13,8 @@ object AmapUtil {
     // 拼接经纬度
     val location = long+","+lat
     //获取url
-    val urlStr = "https://restapi.amap.com/v3/geocode/regeo?location="+location+"&key=b72fd4da872c7830c0801b7425b428ac"
+    val urlStr = "https://restapi.amap" +
+      ".com/v3/geocode/regeo?location="+location+"&key=5386c60b89ab66747cc385cca1aaca90&radius=3000"
     // 获取http请求
     val json = HttpUtil.get(urlStr)
     // 解析

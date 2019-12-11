@@ -1,31 +1,31 @@
 package com.log
 
+import java.util.Properties
+
 import com.util.{SchemaType, StrUtils}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 /**
-  * 将数据格式转换为Parquet格式
-  */
+ * 将数据格式转换为Parquet格式
+ */
 object log2Parquet {
 
   def main(args: Array[String]): Unit = {
-    System.setProperty("hadoop.home.dir", "D:\\Huohu\\下载\\hadoop-common-2.2.0-bin-master")
+    //    System.setProperty("hadoop.home.dir", "D:\\Huohu\\下载\\hadoop-common-2.2.0-bin-master")
     val spark = SparkSession.builder()
       .appName("parquet")
-      .master("local")
-      // 设置序列化方式
-      // .config("","")
+      .master("local").config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
       .getOrCreate()
     // 判断路径
-    if(args.length != 2){
+    if (args.length != 2) {
       println("目录不正确，退出")
       sys.exit()
     }
     // 获取数据
-    val Array(inputPath,outputPath) =args
+    val Array(inputPath, outputPath) = args
     val lines = spark.sparkContext.textFile(inputPath)
     // 先切分在过滤
-    val rowRDD = lines.map(t=>t.split(",",-1)).filter(_.length>=85).map(arr=>{
+    val rowRDD = lines.map(t => t.split(",", -1)).filter(_.length >= 85).map(arr => {
       Row(
         arr(0),
         StrUtils.toInt(arr(1)),
@@ -115,9 +115,20 @@ object log2Parquet {
       )
     })
     // 构建DF
-    val df = spark.createDataFrame(rowRDD,SchemaType.structType)
+    val df = spark.createDataFrame(rowRDD, SchemaType.structType)
     // 保存数据结果
-    df.write.parquet(outputPath)
+    df.cache()
+    df.write.mode(SaveMode.Overwrite).parquet(outputPath)
+    val properties = new Properties()
+    properties.put("url","jdbc:mysql://localhost:3306/lab")
+    properties.put("user","root")
+    properties.put("password","951753")
+    val logDF = df.createTempView("log")
+    val jsonFrame = spark.sql("select provincename,cityname,count(*) as ct from log group by provincename,cityname")
+      .coalesce(35)
+    jsonFrame.write.mode(SaveMode.Overwrite).partitionBy("provincename","cityname").json("d:/temp/jsonLog")
+//    jsonFrame.write.mode(SaveMode.Overwrite).json("d:/temp/jsonLog")
+    jsonFrame.write.mode(SaveMode.Overwrite).jdbc(properties.getProperty("url"),"procity",properties)
     // 关闭
     spark.stop()
 
