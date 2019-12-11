@@ -33,9 +33,9 @@ object TagsContext {
         // 商圈标签
         val businessList = BusinessTag.makeTags(row)
         //app名称标签
-        val appName = AppNameTags.getTag(row)
+        val appName = AppNameTags.makeTags(row)
         //渠道标签
-        val platformTag = ChannelTags.getchannel(row)
+        val platformTag = ChannelTags.makeTags(row)
         //设备标签
         val deviceTags = DeviceTags.makeTags(row)
         // 关键字标签
@@ -43,11 +43,9 @@ object TagsContext {
         // 地域标签
         val areaTags = AreaTags.makeTags(row)
         //         上下文标签
-        (userId, adTag.toBuffer + "\t" + businessList.toBuffer + "\t" + appName + "\t" +
-          platformTag + "\t" + deviceTags.toBuffer + "\t" + keyWordsTag.toBuffer + "\t" + areaTags.toBuffer)
+        (userId, adTag ++ businessList ++ appName ++ platformTag ++ deviceTags ++ keyWordsTag ++ areaTags)
       })
-    val transformDF = transform.toDF("userId","data")
-    transformDF.sample(false,0.3).show()
+    transform.rdd.groupByKey().mapValues()
     spark.stop()
 
   }

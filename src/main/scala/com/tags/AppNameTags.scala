@@ -1,12 +1,14 @@
 package com.tags
 
-import com.util.RedisUtil
+import com.util.{RedisUtil, Tags}
 import org.apache.spark.sql.Row
 import redis.clients.jedis.Jedis
 
-object AppNameTags {
+object AppNameTags extends Tags {
 
-  def getTag(row: Row) = {
+  override def makeTags(args: Any*): List[(String, Int)] = {
+    val row = args(0).asInstanceOf[Row]
+    var list = List[(String, Int)]()
     val appid = row.getAs[String]("appid")
     var appname = row.getAs[String]("appname")
     // 判断当前APPName是否为空
@@ -21,8 +23,7 @@ object AppNameTags {
         jedis.close()
       }
     }
-    ("APP"+appname,1)
+    list :+= ("APP" + appname, 1)
+    list
   }
-
-
 }
