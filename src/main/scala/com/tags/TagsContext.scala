@@ -46,8 +46,8 @@ object TagsContext {
         (userId, adTag ++ businessList ++ appName ++ platformTag ++ deviceTags ++ keyWordsTag ++ areaTags)
       })
     transform.rdd.reduceByKey((list1: List[(String, Int)], list2: List[(String, Int)]) =>
-      list1 ++ list2
-    ).mapValues(_.groupBy(_._1).mapValues())
+      list1 ++ list2.groupBy(_._1).mapValues()
+    )
     spark.stop()
 
   }
