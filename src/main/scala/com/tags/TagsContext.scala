@@ -25,16 +25,21 @@ object TagsContext {
     configuration.set("hbase.zookeeper.quorum", "namenode:2181,secondnamenode:2181,datanode1:2181")
     val connection = ConnectionFactory.createConnection(configuration)
     val admin = connection.getAdmin
-    val htd = new HTableDescriptor(TableName.valueOf("ns1:sz1901"))
-    val hcd = new HColumnDescriptor("tags")
-    hcd.setBloomFilterType(BloomType.ROW)
-    hcd.setTimeToLive(24 * 60 * 60)
-    htd.addFamily(hcd)
-    try admin.createTable(htd)
-    catch {
-      case e: IOException =>
-        e.printStackTrace()
-    }
+//    if(!admin.tableExists(TableName.valueOf("ns1:sz1901"))){
+//      val htd = new HTableDescriptor(TableName.valueOf("ns1:sz1901"))
+//      val hcd = new HColumnDescriptor("tags")
+//      hcd.setBloomFilterType(BloomType.ROW)
+//      hcd.setTimeToLive(24 * 60 * 60)
+//      htd.addFamily(hcd)
+//      try admin.createTable(htd)
+//      catch {
+//        case e: IOException =>
+//          e.printStackTrace()
+//      }
+//    }else{
+//      println("表已存在")
+//    }
+
     // 获取数据
     val df = spark.read.parquet(inputPath)
     //停用的关键词
@@ -77,12 +82,12 @@ object TagsContext {
         val put = new Put(r._1.getBytes)
         //行键下有列族，将数据插入到对应列族中的列限定符下
         put.addColumn(Bytes.toBytes("tags"), Bytes.toBytes("2019-12-11"), Bytes.toBytes(r._2.toBuffer.toString()))
-        //      table.put(put)
+//              table.put(put)
         list.add(put)
       })
-
       // 插入多条数据
       table.put(list)
+      println(list.size()+"\tOK")
     } catch {
       case e: IOException =>
         e.printStackTrace()
