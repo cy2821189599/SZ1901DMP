@@ -65,7 +65,7 @@ object TagsContext {
         //         上下文标签
         (userId, adTag ++ businessList ++ appName ++ platformTag ++ deviceTags ++ keyWordsTag ++ areaTags)
       })
-    val integration = transform.rdd.reduceByKey((list1: List[(String, Int)], list2: List[(String, Int)]) =>
+    val integration: RDD[(String, List[(String, Int)])] = transform.rdd.reduceByKey((list1: List[(String, Int)], list2: List[(String, Int)]) =>
       list1 ++ list2.groupBy(_._1).mapValues(_.foldLeft(0)(_ + _._2))
     )
 
@@ -73,12 +73,14 @@ object TagsContext {
     var list = new java.util.ArrayList[Put]
     try {
       val table = connection.getTable(TableName.valueOf("ns1:sz1901"))
-      integration.foreach(r => {})
-      val put = new Put("tags".getBytes)
-      //行键下有列族，将数据插入到对应列族中的列限定符下
-      put.addColumn(Bytes.toBytes("user_info"), Bytes.toBytes("name"), Bytes.toBytes("root"))
-      //      table.put(put)
-      list.add(put)
+      integration.foreach(r => {
+        val put = new Put(r._1.getBytes)
+        //行键下有列族，将数据插入到对应列族中的列限定符下
+        put.addColumn(Bytes.toBytes("tags"), Bytes.toBytes("2019-12-11"), Bytes.toBytes(r._2.toBuffer.toString()))
+        //      table.put(put)
+        list.add(put)
+      })
+
       // 插入多条数据
       table.put(list)
     } catch {
